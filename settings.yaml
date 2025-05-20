@@ -1,0 +1,12 @@
+token: https://s3m-myolcf.apps.olivine.ccs.ornl.gov/s3m/new-token
+
+streaming_mq:
+  cluster_name: "flowcept"
+  cluster_resources: {
+    "cpus": 4,
+    "ram-gbs": 4,
+    "nodes": 1,
+  }
+  provision_cluster: https://s3m.apps.olivine.ccs.ornl.gov/olcf/v1alpha/streaming/redis/provision_cluster
+  list_clusters: https://s3m.apps.olivine.ccs.ornl.gov/olcf/v1alpha/streaming/rabbitmq/list_clusters
+  get_cluster: https://s3m.apps.olivine.ccs.ornl.gov/olcf/v1alpha/streaming/rabbitmq/cluster/${CLUSTER_NAME}
