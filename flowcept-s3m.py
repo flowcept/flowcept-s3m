@@ -35,32 +35,33 @@ def load_settings(path):
 def deploy_streaming_service() -> dict:
     print("Deploying streaming service...")
     cluster_name = SETTINGS["streaming_mq"]["cluster_name"]
-    provision_cluster_url = SETTINGS["streaming_mq"]["provision_cluster"]
+    cluster_type = SETTINGS["streaming_mq"]["cluster_type"]
+    provision_cluster_url = SETTINGS["streaming_mq"]["provision_cluster"].replace("${CLUSTER_TYPE}", cluster_type)
     provision_request = {
-        "kind": "general",
+        "kind": "dragonfly-general",
         "name": cluster_name,
-        "resourceSettings": {
-            "cpus": 4,
-            "ram-gbs": 4,
-            "nodes": 1,
-        }
+        "resourceSettings": SETTINGS["streaming_mq"]["cluster_resources"]
     }
     response = requests.post(provision_cluster_url, headers=BASE_HEADER, json=provision_request)
+    print(f"This is the executed CURL:\n{curlify.to_curl(response.request)}\n\n")
     return response.json()
 
 
 def get_cluster(cluster_name: str = None) -> dict:
-    get_cluster_url = SETTINGS["streaming_mq"]["get_cluster"]
+    cluster_type = SETTINGS["streaming_mq"]["cluster_type"]
+    get_cluster_url = SETTINGS["streaming_mq"]["get_cluster"].replace("${CLUSTER_TYPE}", cluster_type)
     print(f"Getting cluster '{cluster_name}'...")
-    cluster = requests.get(get_cluster_url.replace("${CLUSTER_NAME}", cluster_name), headers=BASE_HEADER)
-    return cluster.json()
+    response = requests.get(get_cluster_url.replace("${CLUSTER_NAME}", cluster_name), headers=BASE_HEADER)
+    print(f"This is the executed CURL:\n{curlify.to_curl(response.request)}\n\n")
+    return response.json()
 
 
 def list_clusters() -> list:
-    list_clusters_url = SETTINGS["streaming_mq"]["list_clusters"]
+    cluster_type = SETTINGS["streaming_mq"]["cluster_type"]
+    list_clusters_url = SETTINGS["streaming_mq"]["list_clusters"].replace("${CLUSTER_TYPE}", cluster_type)
     print(f"Listing clusters...")
     response = requests.get(list_clusters_url, headers=BASE_HEADER)
-    print(curlify.to_curl(response.request))
+    print(f"This is the executed CURL:\n{curlify.to_curl(response.request)}\n\n")
     return response.json()
 
 
