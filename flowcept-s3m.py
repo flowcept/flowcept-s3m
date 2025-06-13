@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import yaml
 import sys
@@ -10,6 +11,27 @@ _SETTINGS_PATH = os.getenv("INTERSECT_S3M_SETTINGS", "settings.yaml")
 
 SETTINGS = None
 BASE_HEADER = None
+
+def _format_duration(seconds: int) -> str:
+    """
+    Converts a duration in seconds to days (if >= 86400) or hours.
+
+    Parameters
+    ----------
+    seconds : int
+        The number of seconds to convert.
+
+    Returns
+    -------
+    str
+        A formatted string in days or hours.
+    """
+    if seconds >= 86400:
+        days = seconds / 86400
+        return f"{days:.2f} days"
+    else:
+        hours = seconds / 3600
+        return f"{hours:.2f} hours"
 
 
 def load_settings(path):
@@ -40,9 +62,22 @@ def deploy_streaming_service() -> dict:
     provision_request = {
         "kind": "dragonfly-general",
         "name": cluster_name,
-        "resourceSettings": SETTINGS["streaming_mq"]["cluster_resources"]
+        "resourceOptions": SETTINGS["streaming_mq"]["cluster_resources"]
     }
     response = requests.post(provision_cluster_url, headers=BASE_HEADER, json=provision_request)
+    print(f"This is the executed CURL:\n{curlify.to_curl(response.request)}\n\n")
+    return response.json()
+
+
+def extend() -> dict:
+    print("Extending streaming service...")
+    cluster_name = SETTINGS["streaming_mq"]["cluster_name"]
+    cluster_type = SETTINGS["streaming_mq"]["cluster_type"]
+    provision_cluster_url = SETTINGS["streaming_mq"]["provision_cluster"].replace("${CLUSTER_TYPE}", cluster_type)
+    extend_cluster_url = provision_cluster_url.replace("provision_cluster", "extend")
+    extend_cluster_url += f"/{cluster_name}"
+
+    response = requests.post(extend_cluster_url, headers=BASE_HEADER)
     print(f"This is the executed CURL:\n{curlify.to_curl(response.request)}\n\n")
     return response.json()
 
@@ -62,6 +97,13 @@ def list_clusters() -> list:
     print(f"Listing clusters...")
     response = requests.get(list_clusters_url, headers=BASE_HEADER)
     print(f"This is the executed CURL:\n{curlify.to_curl(response.request)}\n\n")
+    json_resp = response.json()
+    for cluster in json_resp["clusters"]:
+        lifetime = cluster.get("lifetime")
+        seconds = lifetime.get("secondsRemaining")
+        duration = _format_duration(seconds)
+        print(f"Cluster {cluster['name']} still has {duration} remaining.\n\n")
+
     return response.json()
 
 
@@ -96,6 +138,12 @@ def main():
         help="Show specs for a specific cluster defined in settings.yaml"
     )
 
+    group.add_argument(
+        "--extend",
+        action="store_true",
+        help="Extend the lifetime of the cluster defined in settings.yaml"
+    )
+
     args = parser.parse_args()
 
     load_settings(args.settings)
@@ -106,6 +154,8 @@ def main():
         r = list_clusters()
     elif args.get_cluster:
         r = get_cluster(args.get_cluster)
+    elif args.extend:
+        r = extend()
     print(r)
 
 

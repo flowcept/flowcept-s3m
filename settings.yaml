@@ -1,14 +1,25 @@
 # Get your token at: https://s3m-myolcf.apps.olivine.ccs.ornl.gov/s3m/new-token
-token: ???
+token: ?
 
 streaming_mq:
   cluster_name: "flowcept"
   cluster_type: "redis"
-  cluster_resources: {
-    "cpus": 4,
-    "ram-gbs": 4,
-    "nodes": 1,
-  }
+  cluster_resources: [
+      {
+        "key": "cpus",
+        "description": "CPUs per node/replica",
+        "min": 1,
+        "max": 4,
+        "default": 2
+      },
+      {
+        "key": "ram-gbs",
+        "description": "RAM per node/replica in GBs",
+        "min": 1,
+        "max": 4,
+        "default": 2
+      }
+  ]
   provision_cluster: https://s3m.apps.olivine.ccs.ornl.gov/olcf/v1alpha/streaming/${CLUSTER_TYPE}/provision_cluster
   list_clusters: https://s3m.apps.olivine.ccs.ornl.gov/olcf/v1alpha/streaming/${CLUSTER_TYPE}/list_clusters
   get_cluster: https://s3m.apps.olivine.ccs.ornl.gov/olcf/v1alpha/streaming/${CLUSTER_TYPE}/cluster/${CLUSTER_NAME}
